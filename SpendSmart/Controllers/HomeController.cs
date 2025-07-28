@@ -8,9 +8,12 @@ public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
 
-    public HomeController(ILogger<HomeController> logger)
+    private readonly SpendSmartDBContext _context;
+
+    public HomeController(ILogger<HomeController> logger, SpendSmartDBContext context)
     {
         _logger = logger;
+        _context = context;
     }
 
     public IActionResult Index()
@@ -20,19 +23,62 @@ public class HomeController : Controller
 
     public IActionResult Expenses()
     {
-        return View();
+        var allExpenses = _context.Expenses.ToList();
+        var totalExpenses = allExpenses.Sum(x => x.Value);
+        ViewBag.Expenses = totalExpenses;
+
+
+        return View(allExpenses);
     }
-    public IActionResult CreateEdit()
+
+
+    public IActionResult CreateEdit(int? id)
     {
+        if (id != null)
+        {
+            var expnseInDb = _context.Expenses.SingleOrDefault(expense => expense.Id == id);
+            return View(expnseInDb);
+        }
+
+
         return View();
+
     }
-    public IActionResult CreateEditForm()
+
+    public IActionResult DeleteExpense(int id)
     {
-        return RedirectToAction("Index");
+
+        var expnseInDb = _context.Expenses.SingleOrDefault(expense => expense.Id == id);
+        _context.Expenses.Remove(expnseInDb);
+        return RedirectToAction("Expenses");
+    }
+
+
+    public IActionResult CreateEditForm(Expenses model)
+    {
+        
+
+        if (model.Id == 0)
+        {
+            _context.Expenses.Add(model);
+
+        }
+        else
+
+        {
+            _context.Expenses.Update(model);
+        }
+
+
+
+        _context.SaveChanges();
+
+        return RedirectToAction("Expenses");
     }
 
     public IActionResult Privacy()
     {
+
         return View();
     }
 
